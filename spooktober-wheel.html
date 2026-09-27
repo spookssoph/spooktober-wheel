@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Spooktober Challenge Wheel</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: white;
+}
+
+.card {
+  width: 700px;
+  max-width: 96vw;
+
+  padding: 26px;
+
+  border-radius: 28px;
+
+  background: rgba(20, 35, 25, 0.95);
+
+  border: 2px solid rgba(180, 220, 170, 0.8);
+
+  text-align: center;
+
+  box-shadow:
+    0 12px 35px rgba(0,0,0,0.35);
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+
+  margin-bottom: 18px;
+}
+
+.wheel-wrapper {
+  position: relative;
+
+  width: 500px;
+  height: 500px;
+
+  max-width: 78vw;
+  max-height: 78vw;
+
+  margin: 0 auto 22px;
+}
+
+#wheel {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  border-radius: 50%;
+
+  border: 8px solid white;
+}
+
+.pointer {
+  position: absolute;
+
+  z-index: 5;
+
+  top: -20px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  font-size: 48px;
+
+  line-height: 1;
+
+  text-shadow:
+    0 2px 6px rgba(0,0,0,0.6);
+}
+
+#spin-button {
+  padding: 14px 30px;
+
+  border: none;
+  border-radius: 50px;
+
+  background: #c9e6a8;
+
+  color: #20301f;
+
+  font-family: "Trebuchet MS", Arial, sans-serif;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+#spin-button:hover {
+  transform: scale(1.04);
+}
+
+#spin-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.result {
+  margin-top: 18px;
+
+  min-height: 38px;
+
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.timer {
+  margin-top: 6px;
+
+  min-height: 58px;
+
+  font-size: 48px;
+  font-weight: 800;
+
+  letter-spacing: 3px;
+}
+
+.hint {
+  margin-top: 4px;
+
+  font-size: 13px;
+
+  opacity: 0.75;
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="card">
+
+  <div class="title">
+    🎃 SPOOKTOBER CHALLENGE 🎃
+  </div>
+
+
+  <div class="wheel-wrapper">
+
+    <div class="pointer">
+      ▼
+    </div>
+
+    <canvas
+      id="wheel"
+      width="900"
+      height="900">
+    </canvas>
+
+  </div>
+
+
+  <button id="spin-button">
+    🎃 SPIN THE WHEEL 🎃
+  </button>
+
+
+  <div
+    class="result"
+    id="result">
+
+    Ready?
+
+  </div>
+
+
+  <div
+    class="timer"
+    id="timer">
+
+    01:00
+
+  </div>
+
+
+  <div class="hint">
+
+    Spin → challenge appears → 60-second timer starts
+
+  </div>
+
+</div>
+
+
+<script>
+
+const challenges = [
+
+  "🎃 Pumpkin Voice",
+
+  "👻 Ghost Mode",
+
+  "🧛 Villain Mode",
+
+  "🃏 Harley Mode",
+
+  "🕷️ Spider Mode",
+
+  "🎤 Sing It",
+
+  "💃 Dance Break",
+
+  "🎮 Chat Chooses",
+
+  "🙈 No Minimap",
+
+  "🕯️ Lights Down",
+
+  "🎭 Dramatic Reading",
+
+  "🦎 Atlas Appreciation",
+
+  "🎃 Halloween Accessory",
+
+  "💀 Hard Mode",
+
+  "👻 Horror Segment",
+
+  "💚 Your Choice"
+
+];
+
+
+const colors = [
+
+  "#8faa7b",
+  "#c9e6a8",
+  "#6f8f5d",
+  "#dcecc8"
+
+];
+
+
+const canvas =
+  document.getElementById("wheel");
+
+const ctx =
+  canvas.getContext("2d");
+
+const button =
+  document.getElementById("spin-button");
+
+const result =
+  document.getElementById("result");
+
+const timerElement =
+  document.getElementById("timer");
+
+
+let rotation = 0;
+
+let spinning = false;
+
+let timerInterval = null;
+
+
+/* DRAW WHEEL */
+
+function drawWheel() {
+
+  const centerX = 450;
+
+  const centerY = 450;
+
+  const radius = 414;
+
+  const slice =
+    (Math.PI * 2) /
+    challenges.length;
+
+
+  ctx.clearRect(
+    0,
+    0,
+    900,
+    900
+  );
+
+
+  ctx.save();
+
+  ctx.translate(
+    centerX,
+    centerY
+  );
+
+  ctx.rotate(rotation);
+
+
+  challenges.forEach(
+    (challenge, index) => {
+
+      const startAngle =
+        index * slice -
+        Math.PI / 2;
+
+      const endAngle =
+        startAngle +
+        slice;
+
+
+      /* SECTION */
+
+      ctx.beginPath();
+
+      ctx.moveTo(0, 0);
+
+      ctx.arc(
+        0,
+        0,
+        radius,
+        startAngle,
+        endAngle
+      );
+
+      ctx.closePath();
+
+
+      ctx.fillStyle =
+        colors[index % colors.length];
+
+      ctx.fill();
+
+
+      ctx.strokeStyle =
+        "rgba(255,255,255,0.55)";
+
+      ctx.lineWidth = 3;
+
+      ctx.stroke();
+
+
+      /* TEXT */
+
+      ctx.save();
+
+
+      ctx.rotate(
+        startAngle +
+        slice / 2
+      );
+
+
+      ctx.translate(
+        radius * 0.68,
+        0
+      );
+
+
+      ctx.rotate(
+        Math.PI / 2
+      );
+
+
+      ctx.fillStyle =
+        "#20301f";
+
+      ctx.font =
+        "700 24px Trebuchet MS, Arial";
+
+      ctx.textAlign =
+        "center";
+
+      ctx.textBaseline =
+        "middle";
+
+
+      const words =
+        challenge.split(" ");
+
+      const lines = [];
+
+      let line = "";
+
+
+      words.forEach(word => {
+
+        const testLine =
+          line
+            ? line + " " + word
+            : word;
+
+
+        if (
+          ctx.measureText(testLine).width > 190
+          &&
+          line
+        ) {
+
+          lines.push(line);
+
+          line = word;
+
+        } else {
+
+          line = testLine;
+
+        }
+
+      });
+
+
+      if (line) {
+
+        lines.push(line);
+
+      }
+
+
+      lines
+        .slice(0, 3)
+        .forEach(
+          (text, lineIndex) => {
+
+            ctx.fillText(
+
+              text,
+
+              0,
+
+              (
+                lineIndex -
+                (lines.length - 1) / 2
+              ) * 27
+
+            );
+
+          }
+        );
+
+
+      ctx.restore();
+
+    }
+  );
+
+
+  ctx.restore();
+
+
+  /* CENTRE */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    centerX,
+    centerY,
+    70,
+    0,
+    Math.PI * 2
+  );
+
+
+  ctx.fillStyle =
+    "rgba(20,35,25,0.96)";
+
+  ctx.fill();
+
+
+  ctx.strokeStyle =
+    "white";
+
+  ctx.lineWidth = 5;
+
+  ctx.stroke();
+
+
+  ctx.font =
+    "42px Arial";
+
+  ctx.textAlign =
+    "center";
+
+  ctx.textBaseline =
+    "middle";
+
+  ctx.fillText(
+    "🎃",
+    centerX,
+    centerY + 2
+  );
+
+}
+
+
+/* TIMER */
+
+function formatTime(seconds) {
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const remainingSeconds =
+    seconds % 60;
+
+
+  return (
+
+    String(minutes)
+      .padStart(2, "0")
+
+    +
+
+    ":"
+
+    +
+
+    String(remainingSeconds)
+      .padStart(2, "0")
+
+  );
+
+}
+
+
+function startTimer() {
+
+  clearInterval(timerInterval);
+
+
+  let timeLeft = 60;
+
+
+  timerElement.textContent =
+    formatTime(timeLeft);
+
+
+  timerInterval =
+    setInterval(() => {
+
+      timeLeft--;
+
+
+      timerElement.textContent =
+        formatTime(
+          Math.max(timeLeft, 0)
+        );
+
+
+      if (timeLeft <= 0) {
+
+        clearInterval(
+          timerInterval
+        );
+
+        timerInterval = null;
+
+
+        result.textContent =
+          "🎉 CHALLENGE COMPLETE! 🎉";
+
+      }
+
+    }, 1000);
+
+}
+
+
+/* SPIN */
+
+function spinWheel() {
+
+  if (spinning) {
+
+    return;
+
+  }
+
+
+  spinning = true;
+
+  button.disabled = true;
+
+
+  result.textContent =
+    "🎡 SPINNING...";
+
+
+  clearInterval(
+    timerInterval
+  );
+
+
+  timerElement.textContent =
+    "01:00";
+
+
+  const selectedIndex =
+    Math.floor(
+      Math.random() *
+      challenges.length
+    );
+
+
+  const sectionSize =
+    360 /
+    challenges.length;
+
+
+  const targetAngle =
+
+    360 -
+
+    (
+      selectedIndex *
+      sectionSize
+
+      +
+
+      sectionSize / 2
+    );
+
+
+  const currentDegrees =
+    rotation *
+    180 /
+    Math.PI;
+
+
+  const normalized =
+    (
+      currentDegrees % 360
+      + 360
+    ) % 360;
+
+
+  const difference =
+    (
+      targetAngle -
+      normalized
+      + 360
+    ) % 360;
+
+
+  const finalDegrees =
+
+    currentDegrees
+
+    +
+
+    (5 * 360)
+
+    +
+
+    difference;
+
+
+  const startingDegrees =
+    currentDegrees;
+
+
+  const duration = 4000;
+
+  const startTime =
+    performance.now();
+
+
+  function animate(currentTime) {
+
+    const progress =
+      Math.min(
+
+        (
+          currentTime -
+          startTime
+        )
+        /
+        duration,
+
+        1
+
+      );
+
+
+    /* SMOOTH EASING */
+
+    const eased =
+      1 -
+      Math.pow(
+        1 - progress,
+        4
+      );
+
+
+    const degrees =
+
+      startingDegrees
+
+      +
+
+      (
+        finalDegrees -
+        startingDegrees
+      )
+
+      *
+
+      eased;
+
+
+    rotation =
+      degrees *
+      Math.PI /
+      180;
+
+
+    drawWheel();
+
+
+    if (progress < 1) {
+
+      requestAnimationFrame(
+        animate
+      );
+
+    } else {
+
+      result.textContent =
+        challenges[selectedIndex];
+
+
+      spinning = false;
+
+      button.disabled = false;
+
+
+      startTimer();
+
+    }
+
+  }
+
+
+  requestAnimationFrame(
+    animate
+  );
+
+}
+
+
+/* BUTTON */
+
+button.addEventListener(
+  "click",
+  spinWheel
+);
+
+
+/* INITIAL DRAW */
+
+drawWheel();
+
+</script>
+
+</body>
+</html>
